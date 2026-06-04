@@ -9,23 +9,22 @@ const PORT = process.env.PORT || 4002;
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// In-memory storage
 let createdItems = [];
 
-// Sheet IDs
 const ADBOOK_SHEET_ID = process.env.ADBOOK_SHEET_ID || '1MNb13kteliu8oIWHNeRtCIL-2VoeQXJxxY6BtlLLXo8';
 const JAMI_SHEET_ID = process.env.JAMI_SHEET_ID || '1gJV6r7BcWdkslSmjW9v6QqxHHxFirGPlM-6Ykevqnkg';
 
 async function getSheetsClient() {
-  const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT || '{}');
   const auth = new google.auth.GoogleAuth({
-    credentials,
+    credentials: {
+      client_email: process.env.GOOGLE_CLIENT_EMAIL,
+      private_key: (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+    },
     scopes: ['https://www.googleapis.com/auth/spreadsheets']
   });
   return google.sheets({ version: 'v4', auth });
 }
 
-// Write line items to Sheet 2
 async function writeLineItemsToSheet(items) {
   try {
     const sheets = await getSheetsClient();
@@ -58,12 +57,12 @@ async function writeLineItemsToSheet(items) {
       valueInputOption: 'RAW',
       requestBody: { values: rows }
     });
+    console.log('✅ Written to Adbook Google Sheet!');
   } catch (err) {
-    console.error('Google Sheets write error:', err.message);
+    console.error('Adbook Sheets error:', err.message);
   }
 }
 
-// Delete line items from Sheet 2 by dealsheet name
 async function deleteLineItemsFromSheet(dealsheetName) {
   try {
     const sheets = await getSheetsClient();
@@ -72,36 +71,29 @@ async function deleteLineItemsFromSheet(dealsheetName) {
       range: 'Sheet1!A:U'
     });
     const rows = res.data.values || [];
-    // Find rows to delete (column B = dealsheetName)
     const rowsToDelete = rows
       .map((r, i) => ({ row: r, index: i + 1 }))
       .filter(r => r.row[1] === dealsheetName)
       .map(r => r.index)
       .reverse();
-
     for (const rowIndex of rowsToDelete) {
       await sheets.spreadsheets.batchUpdate({
         spreadsheetId: ADBOOK_SHEET_ID,
         requestBody: {
           requests: [{
             deleteDimension: {
-              range: {
-                sheetId: 0,
-                dimension: 'ROWS',
-                startIndex: rowIndex - 1,
-                endIndex: rowIndex
-              }
+              range: { sheetId: 0, dimension: 'ROWS', startIndex: rowIndex - 1, endIndex: rowIndex }
             }
           }]
         }
       });
     }
+    console.log('✅ Deleted from Adbook Sheet!');
   } catch (err) {
-    console.error('Google Sheets delete error:', err.message);
+    console.error('Delete error:', err.message);
   }
 }
 
-// Update Jami ticket status
 async function updateJamiTicketStatus(ticketId, status) {
   try {
     const sheets = await getSheetsClient();
@@ -118,6 +110,7 @@ async function updateJamiTicketStatus(ticketId, status) {
       valueInputOption: 'RAW',
       requestBody: { values: [[status]] }
     });
+    console.log('✅ Jami ticket status updated!');
   } catch (err) {
     console.error('Jami sheet update error:', err.message);
   }
@@ -144,7 +137,6 @@ const PACKAGES = {
 
 app.get('/api/packages', (req, res) => res.json(PACKAGES));
 
-// Create line items
 app.post('/api/lineitems/create', async (req, res) => {
   try {
     const { items } = req.body;
@@ -161,10 +153,8 @@ app.post('/api/lineitems/create', async (req, res) => {
   }
 });
 
-// Get all line items
 app.get('/api/lineitems', (req, res) => res.json(createdItems));
 
-// Update line item
 app.patch('/api/lineitems/:id', (req, res) => {
   const idx = createdItems.findIndex(i => i.uniqueId === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Not found' });
@@ -172,7 +162,6 @@ app.patch('/api/lineitems/:id', (req, res) => {
   res.json(createdItems[idx]);
 });
 
-// Delete line items by dealsheet name (Don't Add)
 app.delete('/api/lineitems/dealsheet/:name', async (req, res) => {
   const name = decodeURIComponent(req.params.name);
   createdItems = createdItems.filter(i => i.dealsheetName !== name);
@@ -180,7 +169,6 @@ app.delete('/api/lineitems/dealsheet/:name', async (req, res) => {
   res.json({ success: true, message: `Deleted all line items for ${name}` });
 });
 
-// Mark Jami ticket as finished
 app.patch('/api/jami/tickets/:id/finish', async (req, res) => {
   await updateJamiTicketStatus(req.params.id, 'Finished');
   res.json({ success: true });
