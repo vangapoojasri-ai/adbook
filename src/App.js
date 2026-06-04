@@ -286,6 +286,14 @@ export default function App() {
                             <button className="edit-btn" onClick={() => {
                               setEditingItem(item);
                               setPhase2Data({
+                                reach_sends: item.reach_sends || 'N/A',
+                                reach_impressions: item.reach_impressions || 'N/A',
+                                reach_views: item.reach_views || 'N/A',
+                                internal_rate: item.internal_rate || 'N/A',
+                                internal_quantity: item.internal_quantity || 'N/A',
+                                internal_revenue_allocation: item.internal_revenue_allocation || 'N/A',
+                                external_rate_type: item.external_rate_type || 'N/A',
+                                external_net_cost: item.external_net_cost || 'N/A',
                                 creative_format: item.creative_format || '',
                                 creative_lives_on: item.creative_lives_on || '',
                                 creative_supplied_by: item.creative_supplied_by || '',
@@ -418,51 +426,78 @@ export default function App() {
         </div>
       )}
 
-      {/* PHASE 2 EDIT MODAL */}
+      {/* EDIT LINE ITEM MODAL - ALL FIELDS EDITABLE */}
       {editingItem && (
         <div className="overlay" onClick={e => e.target === e.currentTarget && setEditingItem(null)}>
-          <div className="modal" style={{maxWidth: 600}}>
+          <div className="modal" style={{maxWidth: 700}}>
             <div className="modal-head">
               <div>
-                <div className="modal-title">EDIT DETAILS</div>
+                <div className="modal-title">EDIT LINE ITEM</div>
                 <div style={{fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--muted)', marginTop: 4}}>
-                  {editingItem.lineItemName} · <span className="uid-tag">{editingItem.uniqueId}</span>
+                  {editingItem.lineItemName} · <span className="uid-tag">{editingItem.uniqueId}</span> · {editingItem.package}
                 </div>
               </div>
               <button className="close-btn" onClick={() => setEditingItem(null)}>✕</button>
             </div>
-            <div className="modal-body">
-              {/* CREATIVE */}
+            <div className="modal-body" style={{maxHeight: '70vh', overflowY: 'auto'}}>
+
               <div className="phase2-section">
-                <div className="phase2-title">Creative</div>
+                <div className="phase2-title">📊 Reach</div>
                 <div className="phase2-grid">
-                  {[['creative_format','Format'],['creative_lives_on','Lives on'],['creative_supplied_by','Supplied by'],['creative_clicks_out_to','Clicks out to']].map(([key, label]) => (
+                  {[['reach_sends','Sends'],['reach_impressions','Impressions'],['reach_views','Views']].map(([key, label]) => (
                     <div className="field-item" key={key}>
                       <div className="field-label">{label}</div>
-                      <input className="field-input" type="text"
-                        value={phase2Data[key] || ''}
-                        onChange={e => setPhase2Data({...phase2Data, [key]: e.target.value})}
-                        placeholder="N/A"
-                        style={{width: '100%'}}
-                      />
+                      <input className="field-input" type="text" value={phase2Data[key] ?? ''} onChange={e => setPhase2Data({...phase2Data, [key]: e.target.value})} placeholder="N/A" style={{width: '100%'}} />
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* HARD COSTS */}
               <div className="phase2-section">
-                <div className="phase2-title">Hard Costs (Internal)</div>
+                <div className="phase2-title">💰 Internal Pricing</div>
+                <div className="phase2-grid">
+                  {[['internal_rate','Rate'],['internal_quantity','Quantity'],['internal_revenue_allocation','Revenue Allocation']].map(([key, label]) => (
+                    <div className="field-item" key={key}>
+                      <div className="field-label">{label}</div>
+                      <input className="field-input" type="text" value={phase2Data[key] ?? ''} onChange={e => setPhase2Data({...phase2Data, [key]: e.target.value})} placeholder="N/A" style={{width: '100%'}} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="phase2-section">
+                <div className="phase2-title">💵 External Pricing</div>
+                <div className="phase2-grid">
+                  {[['external_rate_type','Rate Type'],['external_net_cost','Net Cost']].map(([key, label]) => (
+                    <div className="field-item" key={key}>
+                      <div className="field-label">{label}</div>
+                      <input className="field-input" type="text" value={phase2Data[key] ?? ''} onChange={e => setPhase2Data({...phase2Data, [key]: e.target.value})} placeholder="N/A" style={{width: '100%'}} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{height: 1, background: 'var(--border)', margin: '20px 0'}} />
+
+              <div className="phase2-section">
+                <div className="phase2-title">🎨 Creative</div>
+                <div className="phase2-grid">
+                  {[['creative_format','Format'],['creative_lives_on','Lives on'],['creative_supplied_by','Supplied by'],['creative_clicks_out_to','Clicks out to']].map(([key, label]) => (
+                    <div className="field-item" key={key}>
+                      <div className="field-label">{label}</div>
+                      <input className="field-input" type="text" value={phase2Data[key] ?? ''} onChange={e => setPhase2Data({...phase2Data, [key]: e.target.value})} placeholder="N/A" style={{width: '100%'}} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="phase2-section">
+                <div className="phase2-title">🏗 Hard Costs (Internal)</div>
                 <div className="phase2-grid">
                   {[['hard_cost_budget','Budget'],['hard_cost_rate','Rate'],['hard_cost_tied_to','Tied to']].map(([key, label]) => (
                     <div className="field-item" key={key}>
                       <div className="field-label">{label}</div>
-                      <input className="field-input" type="text"
-                        value={phase2Data[key] || ''}
-                        onChange={e => setPhase2Data({...phase2Data, [key]: e.target.value})}
-                        placeholder="N/A"
-                        style={{width: '100%'}}
-                      />
+                      <input className="field-input" type="text" value={phase2Data[key] ?? ''} onChange={e => setPhase2Data({...phase2Data, [key]: e.target.value})} placeholder="N/A" style={{width: '100%'}} />
                     </div>
                   ))}
                 </div>
@@ -470,7 +505,7 @@ export default function App() {
 
               <div style={{display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border)'}}>
                 <button className="btn btn-outline" onClick={() => setEditingItem(null)}>Cancel</button>
-                <button className="btn btn-success" onClick={savePhase2}>✅ Save Details</button>
+                <button className="btn btn-success" onClick={savePhase2}>✅ Save All Details</button>
               </div>
             </div>
           </div>
